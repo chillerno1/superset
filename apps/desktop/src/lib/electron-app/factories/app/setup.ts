@@ -73,6 +73,14 @@ PLATFORM.IS_LINUX && app.disableHardwareAcceleration();
 // macOS Sequoia+: occluded window throttling can corrupt GPU compositor layers
 if (PLATFORM.IS_MAC) {
 	app.commandLine.appendSwitch("disable-backgrounding-occluded-windows");
+
+	// macOS Dictation (double-tap Control) only attaches to a focused text
+	// field it can find through the accessibility tree. Chromium builds that
+	// tree lazily, only once it detects an assistive client, and Dictation
+	// doesn't count as one, so the mic popover never appears in Superset.
+	// "form-controls" mode exposes just focus and editable controls, so the
+	// per-pane cost stays small compared to a full tree.
+	app.commandLine.appendSwitch("force-renderer-accessibility", "form-controls");
 }
 
 PLATFORM.IS_WINDOWS &&
