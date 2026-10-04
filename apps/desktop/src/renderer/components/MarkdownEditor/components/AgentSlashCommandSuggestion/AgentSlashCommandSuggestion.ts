@@ -34,13 +34,21 @@ export interface AgentSlashCommandSuggestionOptions {
 
 interface AgentSlashCommandSuggestionStorage {
 	open: boolean;
+	refresh: () => void;
+}
+
+function getStorage(editor: Editor | null) {
+	return (editor?.storage as Record<string, unknown> | undefined)?.[
+		EXTENSION_NAME
+	] as AgentSlashCommandSuggestionStorage | undefined;
 }
 
 export function isAgentSlashCommandMenuOpen(editor: Editor | null): boolean {
-	const storage = (editor?.storage as Record<string, unknown> | undefined)?.[
-		EXTENSION_NAME
-	] as AgentSlashCommandSuggestionStorage | undefined;
-	return storage?.open === true;
+	return getStorage(editor)?.open === true;
+}
+
+export function refreshAgentSlashCommands(editor: Editor | null): void {
+	getStorage(editor)?.refresh();
 }
 
 function matchCommands(commands: SlashCommand[], query: string) {
@@ -64,7 +72,7 @@ export const AgentSlashCommandSuggestion = Extension.create<
 	},
 
 	addStorage() {
-		return { open: false };
+		return { open: false, refresh: () => {} };
 	},
 
 	addProseMirrorPlugins() {
@@ -76,7 +84,6 @@ export const AgentSlashCommandSuggestion = Extension.create<
 				char: "/",
 				allowSpaces: false,
 				allow: ({ range }) => range.from === DOC_START,
-				items: ({ query }) => matchCommands(options.getCommands(), query),
 				command: ({ editor, range, props }) => {
 					editor
 						.chain()
@@ -112,9 +119,10 @@ export const AgentSlashCommandSuggestion = Extension.create<
 						);
 					};
 					const show = (props: SuggestionProps<SlashCommand>) => {
-						commands = props.items;
+						commands = matchCommands(options.getCommands(), props.query);
 						selectedIndex = 0;
 						select = (command) => props.command(command);
+						storage.refresh = () => show(props);
 						publish();
 					};
 
@@ -146,6 +154,7 @@ export const AgentSlashCommandSuggestion = Extension.create<
 						},
 						onExit: () => {
 							editor?.off("blur", dismiss);
+							storage.refresh = () => {};
 							commands = [];
 							publish();
 						},

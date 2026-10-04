@@ -59,6 +59,7 @@ import {
 	type AgentSlashCommandMenu,
 	AgentSlashCommandSuggestion,
 	isAgentSlashCommandMenuOpen,
+	refreshAgentSlashCommands,
 } from "./components/AgentSlashCommandSuggestion";
 import { CodeBlockView } from "./components/CodeBlockView";
 import { EmojiSuggestion } from "./components/EmojiSuggestion";
@@ -558,6 +559,10 @@ export function MarkdownEditor({
 	useEffect(() => {
 		if (editor && editor.isEditable !== editable) editor.setEditable(editable);
 	}, [editable, editor]);
+
+	useEffect(() => {
+		if (slashCommands) refreshAgentSlashCommands(editor);
+	}, [editor, slashCommands]);
 
 	// Content read before the catalog answered kept `@name` as text; the first
 	// catalog arrival turns those into chips. Later refreshes leave typing alone.
