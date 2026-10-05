@@ -16,9 +16,6 @@ const agentSlashCommandSuggestionKey = new PluginKey(
 
 const EXTENSION_NAME = "agentSlashCommandSuggestion";
 
-// Agents run a prompt as a command only when the command opens the prompt.
-const DOC_START = 1;
-
 export interface AgentSlashCommandMenu {
 	commands: SlashCommand[];
 	selectedIndex: number;
@@ -83,7 +80,13 @@ export const AgentSlashCommandSuggestion = Extension.create<
 				editor: this.editor,
 				char: "/",
 				allowSpaces: false,
-				allow: ({ range }) => range.from === DOC_START,
+				allow: ({ state, range }) => {
+					const $pos = state.doc.resolve(range.from);
+					if ($pos.parentOffset === 0) return true;
+					return /\s/.test(
+						$pos.parent.textBetween($pos.parentOffset - 1, $pos.parentOffset),
+					);
+				},
 				command: ({ editor, range, props }) => {
 					editor
 						.chain()

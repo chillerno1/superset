@@ -73,11 +73,16 @@ describe("AgentSlashCommandSuggestion", () => {
 		editor.destroy();
 	});
 
-	it("opens only when the slash starts the prompt", async () => {
+	it("opens at the start of a line or after a space, never mid-word", async () => {
 		const { editor, menuNames } = createEditor([command("cloudflare")]);
-		editor.commands.insertContent("hi /");
+		editor.commands.insertContent("and/");
 		await settle();
 		expect(menuNames()).toBeNull();
+
+		editor.commands.clearContent();
+		editor.commands.insertContent("i want to use /");
+		await settle();
+		expect(menuNames()).toEqual(["cloudflare"]);
 
 		editor.commands.clearContent();
 		editor.commands.insertContent("/");
